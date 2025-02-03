@@ -14,7 +14,7 @@ i chose usb controler becuse it gave me the least delay and most reliebilety.
 
 
 
-#to do
+# To do.
 1. optemize the rendering and refacter the code.
 2. exspand on the game so it is fun.
 
