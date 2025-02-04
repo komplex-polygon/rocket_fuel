@@ -1,25 +1,30 @@
-# rocket_fuel
-wellcome to my game that i made in C.
+# Rocket fuel
+Welcome to my game that I made in C.
 
-this game is right now just an space simulator but i have plans for more.
-the specal thing with this game is that it uses unicode carecters to rendering and that makes it useble on headless computers. 
-i have not made it work with ssh but im working on it.
-
-
-
-# problems with ssh.
-becuse the game uses the usb contoler for the input ssh will not work in the current moment.
-i chose usb controler becuse it gave me the least delay and most reliebilety.
+This game is right now just a space simulator but I have plans for more.
+The special thing with this game is that it uses unicode characters for rendering and that makes it usable on headless computers.
+i have not made it work with ssh but i'm working on it.
 
 
 
-
-# To do.
-1. optemize the rendering and refacter the code.
-2. exspand on the game so it is fun.
-
+# Problems with ssh
+because the game uses the usb controller for the input ssh will not work in the current moment.
+I chose the usb controller because it gave me the least delay and most reliability.
 
 
-made by mikael.b
 
 
+# To do
+1. optimize the rendering and refactor the code.
+2. expand on the game so it is fun.  :3
+
+
+
+
+
+# About
+This game was made by Mikael.back... and some parts ai (deepseek).
+Ai did the low level stuff such as reading usb controller data and ANSI codes.
+If you don't trust deepseeker you can read the code in the rock.c and judge by yourself if you want to run it.
+
+Ps: This is the first time I program in C so don't judge me too much. ;3
