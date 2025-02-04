@@ -7,6 +7,13 @@ i have not made it work with ssh but i'm working on it.
 
 
 
+
+# Video
+
+https://github.com/user-attachments/assets/8c03f7c6-ba51-444d-920d-5d978130cd24
+
+
+
 # Problems with ssh
 because the game uses the usb controller for the input ssh will not work in the current moment.
 I chose the usb controller because it gave me the least delay and most reliability.
@@ -28,3 +35,7 @@ Ai did the low level stuff such as reading usb controller data and ANSI codes.
 If you don't trust deepseeker you can read the code in the rock.c and judge by yourself if you want to run it.
 
 Ps: This is the first time I program in C so don't judge me too much. ;3
+
+
+
+
