@@ -11,6 +11,8 @@
 #include <fcntl.h>
 #include <linux/input.h>
 #include <stdint.h>
+#include <limits.h>
+#include <dirent.h>
 
 #define MAX_DEVICES 32
 #define KEY_STATE_SIZE 256
@@ -20,14 +22,51 @@
 static int kb_fd = -1;
 static char key_states[KEY_STATE_SIZE] = {0};
 
-static int find_keyboard_device(void)
+int keyb[32] = {0};
+int keyint = 0;
+
+void list_usb_input_devices()
+{
+    DIR *dir = opendir("/sys/class/input");
+    if (!dir)
+        return;
+
+    struct dirent *entry;
+    char path[PATH_MAX], name[256], resolved[PATH_MAX];
+
+    while ((entry = readdir(dir)))
+    {
+        if (strncmp(entry->d_name, "event", 5))
+            continue;
+
+        snprintf(path, sizeof(path), "/sys/class/input/%s/device/name", entry->d_name);
+        FILE *f = fopen(path, "r");
+        if (!f)
+            continue;
+
+        fgets(name, sizeof(name), f);
+        fclose(f);
+        name[strcspn(name, "\n")] = 0;
+
+        snprintf(path, sizeof(path), "/sys/class/input/%s/device", entry->d_name);
+        if (realpath(path, resolved) && strstr(resolved, "/usb"))
+        {
+            printf("%-3d %s\n", keyint, name);
+            keyb[keyint] = (int)atoi(entry->d_name + 5);
+            keyint++;
+        }
+    }
+    closedir(dir);
+}
+
+static int find_keyboard_device(int idll2)
 {
     char path[256];
     unsigned long ev_bits = 0;
 
-    for (int i = 0; i < MAX_DEVICES; i++)
+    for (int i = 0; i < 1; i++)
     {
-        snprintf(path, sizeof(path), "/dev/input/event%d", i);
+        snprintf(path, sizeof(path), "/dev/input/event%d", idll2);
         int fd = open(path, O_RDONLY | O_NONBLOCK);
         if (fd == -1)
             continue;
@@ -44,12 +83,12 @@ static int find_keyboard_device(void)
     return -1;
 }
 
-int initialize(void)
+int initialize(int idll)
 {
     if (kb_fd != -1)
         return 1;
 
-    kb_fd = find_keyboard_device();
+    kb_fd = find_keyboard_device(idll);
     if (kb_fd == -1)
         return 0;
 
@@ -120,14 +159,12 @@ struct cam_s
 
 float noise2d(int x, int y)
 {
-    // Combine coordinates with prime numbers and bit operations
+
     uint32_t hash = (x * 0x1e35a7bd) ^ (y * 0x9e3779b9);
 
-    // Improve hash distribution through bit manipulation
     hash = (hash << 13) ^ hash;
     hash = hash * (hash * hash * 15731 + 789221) + 1376312589;
 
-    // Convert to float in [0,1] range
     return (float)(hash & 0x7FFFFFFF) / 0x7FFFFFFF;
 }
 
@@ -155,14 +192,6 @@ void add_par(float xp, float yp, float xv, float yv, float lifeo)
     parts[id].act = 1;
     parts[id].life = lifeo;
     parts[id].full = lifeo;
-    // fotts[currentIndex].x = xg;
-    // fotts[currentIndex].y = yg;
-    // fotts[currentIndex].ang = angg;
-    // fotts[currentIndex].type = typg;
-    // fotts[currentIndex].life = 5.0f;
-    // fotts[currentIndex].is_act = 1;
-
-    // currentIndex = (currentIndex + 1) % 50;
 }
 
 int smoke[] = {220, 214, 208, 202, 160, 88, 52, 234};
@@ -177,13 +206,30 @@ int screen_y = 0;
 
 int main()
 {
+    system("clear");
+    printf("chuse your keybord. :3\n");
+    list_usb_input_devices();
+    int keee;
+
+    printf("enter keybord number :3 :");
+    fflush(stdout);
+
+    scanf("%d", &keee);
+
+    system("clear");
+
+    if (keee < 0 || keee >= keyint)
+    {
+        return 0;
+    }
+
     printf("Don't press any keys!!!\n");
 
     sleep(2);
 
     int *screen = NULL;
     srand(time(NULL));
-    if (initialize() == 0)
+    if (initialize(keyb[keee]) == 0)
     {
         fprintf(stderr, "Run as root (sudo) :3\n");
         return 1;
@@ -202,14 +248,7 @@ int main()
     srand(time(NULL));
     struct winsize ws;
 
-    // Hide cursor
     printf("\e[?25l");
-
-    // int tangent;
-
-    // struct timespec sleep_time = {0, 66666666}; // 66.666 ms för 15 Hz
-
-    // int space_is_pressed = 0;
 
     while (!is_key_pressed(KEY_ESC))
     {
@@ -221,8 +260,7 @@ int main()
             system("clear");
             screen_x = ws.ws_col;
             screen_y = (ws.ws_row - 3) * 2;
-            // free(screen);
-            // screen = malloc((screen_y*screen_x) * sizeof(int));
+
             screen = realloc(screen, (screen_y * screen_x) * sizeof(int));
             memset(screen, 0, (screen_y * screen_x) * sizeof(int));
         }
@@ -233,12 +271,6 @@ int main()
         memset(screen, 0, (screen_y * screen_x) * sizeof(int));
 
         refresh_keys();
-
-        // if (is_key_pressed(KEY_UP)) {
-        //     yp -= 1;
-        // }
-
-        //
 
         if (is_key_pressed(KEY_SPACE))
         {
@@ -254,7 +286,7 @@ int main()
                 rpa -= 0.005;
                 angss += 0.3f;
             }
-            //    yp += 1;
+
             xpa -= sin(rp) * 0.05;
             ypa -= cos(rp) * 0.05;
 
@@ -291,8 +323,6 @@ int main()
             }
         }
 
-        // ypa += 0.01;
-
         xp += xpa;
         yp += ypa;
         rp += rpa;
@@ -306,7 +336,6 @@ int main()
         {
             cam_x += cam_ss[camera_soml2].x;
             cam_y += cam_ss[camera_soml2].y;
-            // camera_time += cam_ss[camera_soml2].time;
         }
 
         cam_x /= 15;
@@ -315,8 +344,6 @@ int main()
         cam_o_x = (int)floor(cam_x) - screen_x / 2;
         cam_o_y = (int)floor(cam_y) - screen_y / 2;
 
-        // rp += 0.1;
-        //  Move cursor to top-left corner
         printf("\033[H");
 
         for (int paro = 0; paro < 200; paro++)
@@ -368,10 +395,7 @@ int main()
         {
             for (col = 0; col < screen_x; col++)
             {
-                // float random = (float)rand() / (float)RAND_MAX;
 
-                // int over = 0;
-                // int overb = 0;
                 int color = screen[col + ((row * 2) * screen_x)]; // col/ws.ws_col;
                 if (color == 0)
                 {
@@ -461,11 +485,14 @@ int main()
         usleep(1000000 / 30);
     }
 
-    // Show cursor again (in case the program is terminated)
     disconnect();
     system("clear");
     printf("\e[?25h");
-    printf("you are a femboy :3 ");
-    // close(fd);
+    printf("Have a good day.\n");
+    sleep(1);
+    printf("I realy mean that. ;3\n");
+    sleep(2);
+    system("clear");
+
     return 0;
 }
