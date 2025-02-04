@@ -12,6 +12,8 @@ i have not made it work with ssh but i'm working on it.
 
 https://github.com/user-attachments/assets/8c03f7c6-ba51-444d-920d-5d978130cd24
 
+Sorry for the low bitrate. :3
+
 
 
 # Problems with ssh
