@@ -140,6 +140,11 @@ float dis(int x, int y, int tx, int ty)
     return sqrt((x - tx) * (x - tx) + (y - ty) * (y - ty));
 }
 
+float sphere_volume_cm3(float radius_cm)
+{
+    return (4.0 / 3.0) * 3.141592 * radius_cm * radius_cm * radius_cm;
+}
+
 struct par
 {
     float life;
@@ -155,6 +160,19 @@ struct cam_s
 {
     float x;
     float y;
+    float r;
+};
+
+struct plant
+{
+    float x;
+    float xa;
+    float y;
+    float ya;
+    float size;
+    float mass;
+    int is_act;
+    int color;
 };
 
 float noise2d(int x, int y)
@@ -171,13 +189,20 @@ float noise2d(int x, int y)
 int cameraIndex = 0;
 
 struct cam_s cam_ss[15] = {0};
+struct plant planets[15] = {0};
 
-void add_cam(float xc, float yc)
+void add_cam(float xc, float yc, float rc)
 {
     cam_ss[cameraIndex].x = xc;
     cam_ss[cameraIndex].y = yc;
+    cam_ss[cameraIndex].r = rc;
 
     cameraIndex = (cameraIndex + 1) % 15;
+}
+
+float invq(float dist)
+{
+    return 1.0f / ((float)dist * (float)dist);
 }
 
 struct par parts[200] = {0};
@@ -196,8 +221,9 @@ void add_par(float xp, float yp, float xv, float yv, float lifeo)
 
 int smoke[] = {220, 214, 208, 202, 160, 88, 52, 234};
 
-int cam_o_x = 0;
-int cam_o_y = 0;
+float cam_o_x = 0;
+float cam_o_y = 0;
+float cam_o_r = 0;
 
 int is_act = 0;
 
@@ -238,10 +264,10 @@ int main()
     int old_row = 0;
     int old_col = 0;
 
-    float xp = 32;
-    float yp = 32;
+    float xp = 0;
+    float yp = 100;
     float xpa = 0;
-    float ypa = 0;
+    float ypa = 2;
     float rp = 0;
     float rpa = 0;
 
@@ -249,6 +275,20 @@ int main()
     struct winsize ws;
 
     printf("\e[?25l");
+
+    planets[0].is_act = 1;
+    planets[0].size = 20;
+    // planets[0].x = 200;
+    planets[0].mass = 200;
+    planets[0].color = 230;
+
+    planets[1].is_act = 1;
+    planets[1].size = 5;
+    planets[1].x = 150;
+    // planets[1].y = 200;
+    planets[1].ya = 1;
+    planets[1].mass = 50;
+    planets[1].color = 35;
 
     while (!is_key_pressed(KEY_ESC))
     {
@@ -272,23 +312,24 @@ int main()
 
         refresh_keys();
 
+        float angss = 0;
+        if (is_key_pressed(KEY_LEFT))
+        {
+            rpa += 0.005;
+            angss -= 0.3f;
+        }
+
+        if (is_key_pressed(KEY_RIGHT))
+        {
+            rpa -= 0.005;
+            angss += 0.3f;
+        }
+
         if (is_key_pressed(KEY_SPACE))
         {
-            float angss = 0;
-            if (is_key_pressed(KEY_LEFT))
-            {
-                rpa += 0.005;
-                angss -= 0.3f;
-            }
 
-            if (is_key_pressed(KEY_RIGHT))
-            {
-                rpa -= 0.005;
-                angss += 0.3f;
-            }
-
-            xpa -= sin(rp) * 0.05;
-            ypa -= cos(rp) * 0.05;
+            xpa -= sin(rp) * 0.1;
+            ypa -= cos(rp) * 0.1;
 
             for (int fuck = 0; fuck < 50; fuck++)
             {
@@ -297,10 +338,10 @@ int main()
                 float speed = (rand() / (float)RAND_MAX) * 8.0f + 2.0f;
                 float lifes = (rand() / (float)RAND_MAX) * 4.0f + 1.0f;
 
-                float xpaa = sin(rp + angel * 0.3 + angss) * speed;
-                float ypaa = cos(rp + angel * 0.3 + angss) * speed;
+                float xpaa = sin(rp + angel * 0.2 + angss) * speed;
+                float ypaa = cos(rp + angel * 0.2 + angss) * speed;
 
-                add_par(xp + sin(rp) * 8, yp + cos(rp) * 8, xpaa + xpa, ypaa + ypa, lifes);
+                add_par(xp + sin(rp) * 4, yp + cos(rp) * 4, xpaa + xpa, ypaa + ypa, lifes);
             }
         }
 
@@ -323,26 +364,74 @@ int main()
             }
         }
 
+        for (int pl = 0; pl < 15; pl++)
+        {
+            if (planets[pl].is_act == 1)
+            {
+                float dol = dis(planets[pl].x, planets[pl].y, xp, yp);
+                float grav = invq(dol) * planets[pl].mass;
+                float fx = (planets[pl].x - xp) / dol * grav;
+                float fy = (planets[pl].y - yp) / dol * grav;
+                xpa += fx;
+                ypa += fy;
+            }
+        }
+
+        for (int pl2 = 0; pl2 < 15; pl2++)
+        {
+            if (planets[pl2].is_act == 1)
+            {
+                for (int pl = 0; pl < 15; pl++)
+                {
+                    if (planets[pl].is_act == 1 && pl != pl2)
+                    {
+                        float dol = dis(planets[pl].x, planets[pl].y, planets[pl2].x, planets[pl2].y);
+                        // dol = isnan(dol) ? 0.0f : dol;
+                        float grav = invq(dol) * planets[pl].mass;
+                        float fx = (planets[pl].x - planets[pl2].x) / dol * grav;
+                        float fy = (planets[pl].y - planets[pl2].y) / dol * grav;
+                        planets[pl2].xa += fx;
+                        planets[pl2].ya += fy;
+                        // printf("%f   %f    %f   %f       ",planets[pl].x,planets[pl].y,planets[pl2].x,planets[pl2].y);
+                        // return 0;
+                    }
+                }
+            }
+        }
+
+        for (int pl2 = 0; pl2 < 15; pl2++)
+        {
+            if (planets[pl2].is_act == 1)
+            {
+                planets[pl2].x += planets[pl2].xa;
+                planets[pl2].y += planets[pl2].ya;
+            }
+        }
+
         xp += xpa;
         yp += ypa;
         rp += rpa;
 
-        add_cam(xp, yp);
+        add_cam(xp, yp, rp);
 
         float cam_x = 0;
         float cam_y = 0;
+        float cam_r = 0;
 
         for (int camera_soml2 = 0; camera_soml2 < 15; camera_soml2++)
         {
             cam_x += cam_ss[camera_soml2].x;
             cam_y += cam_ss[camera_soml2].y;
+            cam_r += cam_ss[camera_soml2].r;
         }
 
         cam_x /= 15;
         cam_y /= 15;
+        cam_r /= 15;
 
-        cam_o_x = (int)floor(cam_x) - screen_x / 2;
-        cam_o_y = (int)floor(cam_y) - screen_y / 2;
+        cam_o_x = (float)cam_x; // - screen_x / 2;
+        cam_o_y = (float)cam_y; // - screen_y / 2;
+        cam_o_r = (float)cam_r;
 
         printf("\033[H");
 
@@ -350,31 +439,47 @@ int main()
         {
             if (parts[paro].act == 1)
             {
-                int id = (int)floor(parts[paro].x - cam_o_x) + ((int)floor(parts[paro].y - cam_o_y) * screen_x);
-                if (id >= 0 && id < screen_x * screen_y && floor(parts[paro].x - cam_o_x) < screen_x && floor(parts[paro].x - cam_o_x) >= 0 && floor(parts[paro].y - cam_o_y) < screen_y && floor(parts[paro].y - cam_o_y) >= 0)
+                float prot = atan2(parts[paro].y - cam_o_y, parts[paro].x - cam_o_x);
+                float pdis = dis(parts[paro].x, parts[paro].y, cam_o_x, cam_o_y);
+                prot += cam_o_r;
+                float prx = (float)cos(prot) * pdis + screen_x / 2;
+                float pry = (float)sin(prot) * pdis + screen_y / 2;
+                int id = (int)floor(prx) + ((int)floor(pry) * screen_x);
+                if (id >= 0 && id < screen_x * screen_y && floor(prx) < screen_x && floor(prx) >= 0 && floor(pry) < screen_y && floor(pry) >= 0)
                 {
                     screen[id] = smoke[(int)floor((float)((float)1 - parts[paro].life / parts[paro].full) * 8)];
                 }
             }
         }
 
-        int jjx = floor(xp) - 32 - cam_o_x;
-        int jjy = floor(yp) - 32 - cam_o_y;
+        float span = atan2(yp - cam_o_y, xp - cam_o_x);
+        float spdi = dis(xp, yp, cam_o_x, cam_o_y);
+        span += cam_o_r;
+        float srx = cos(span) * spdi + screen_x / 2;
+        float sry = sin(span) * spdi + screen_y / 2;
 
-        for (int bby = 0; bby < 64; bby++)
+        int jjx = (int)floor(srx) - 16;
+        int jjy = (int)floor(sry) - 16;
+
+        for (int bby = 0; bby < 32; bby++)
         {
-            for (int bbx = 0; bbx < 64; bbx++)
+            for (int bbx = 0; bbx < 32; bbx++)
             {
-                float ang = atan2((bby + jjy) - (yp - cam_o_y), (bbx + jjx) - (xp - cam_o_x));
-                float dio = dis((bbx + jjx), (bby + jjy), (xp - cam_o_x), (yp - cam_o_y)) * 1;
+                // int id1 = (bbx + jjx) + ((bby + jjy) * screen_x);
+                // screen[id1] = 255;
 
-                ang += rp;
+                float ang = atan2(bby - 16, bbx - 16);
+                float dio = dis(bbx, bby, 16, 16) * 2;
+
+                ang += rp - cam_o_r;
 
                 int tex_x = floor((float)cos(ang) * dio + 0.5) + 16;
                 int tex_y = floor((float)sin(ang) * dio + 0.5) + 16;
 
                 if (tex_x > 0 && tex_x < 32 && tex_y > 0 && tex_y < 32)
                 {
+                    // int id2 = (bbx + jjx) + ((bby + jjy) * screen_x);
+                    // screen[id2] = 250;
                     int pos = tex_y * 32 + tex_x;
                     unsigned char brightness = image2_raw[pos];
                     if (floor((float)((float)brightness / 255) * 100) != 10)
@@ -399,18 +504,42 @@ int main()
                 int color = screen[col + ((row * 2) * screen_x)]; // col/ws.ws_col;
                 if (color == 0)
                 {
-                    if ((float)noise2d(col + cam_o_x, row * 2 + cam_o_y) > 0.99)
+                    float scrot = atan2((float)(row * 2) - screen_y / 2, (float)col - screen_x / 2);
+                    float sgdis = dis((float)col, (row * 2), (float)screen_x / 2, (float)screen_y / 2);
+                    scrot -= cam_o_r;
+                    float prx = (float)cos(scrot) * sgdis + cam_o_x;
+                    float pry = (float)sin(scrot) * sgdis + cam_o_y;
+                    if ((float)noise2d((int)floor(prx), (int)floor(pry)) > 0.99)
                     {
                         color = 255;
+                    }
+                    for (int plas = 0; plas < 15; plas++)
+                    {
+                        if (dis(prx, pry, planets[plas].x, planets[plas].y) < planets[plas].size)
+                        {
+                            color = planets[plas].color;
+                        }
                     }
                 }
 
                 int colorb = screen[col + ((row * 2 + 1) * screen_x)]; // col/ws.ws_col;
                 if (colorb == 0)
                 {
-                    if ((float)noise2d(col + cam_o_x, row * 2 + 1 + cam_o_y) > 0.99)
+                    float scrot = atan2((float)(row * 2 + 1) - screen_y / 2, (float)col - screen_x / 2);
+                    float sgdis = dis((float)col, (row * 2 + 1), (float)screen_x / 2, (float)screen_y / 2);
+                    scrot -= cam_o_r;
+                    float prx = (float)cos(scrot) * sgdis + cam_o_x;
+                    float pry = (float)sin(scrot) * sgdis + cam_o_y;
+                    if ((float)noise2d((int)floor(prx), (int)floor(pry)) > 0.99)
                     {
                         colorb = 255;
+                    }
+                    for (int plas = 0; plas < 15; plas++)
+                    {
+                        if (dis(prx, pry, planets[plas].x, planets[plas].y) < planets[plas].size && planets[plas].is_act == 1)
+                        {
+                            colorb = planets[plas].color;
+                        }
                     }
                 }
 
