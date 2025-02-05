@@ -10,7 +10,7 @@ i have not made it work with ssh but i'm working on it.
 
 # Video
 
-https://github.com/user-attachments/assets/8c03f7c6-ba51-444d-920d-5d978130cd24
+https://github.com/user-attachments/assets/ee3b0fd8-de24-40d7-8bd2-4dc156b0461b
 
 Sorry for the low bitrate. :3
 
@@ -37,7 +37,6 @@ Ai did the low level stuff such as reading usb controller data and ANSI codes.
 If you don't trust deepseeker you can read the code in the rock.c and judge by yourself if you want to run it.
 
 Ps: This is the first time I program in C so don't judge me too much. ;3
-
 
 
 
