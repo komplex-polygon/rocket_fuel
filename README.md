@@ -1,4 +1,5 @@
-# Rocket fuel
+![pixil-frame-0(73)](https://github.com/user-attachments/assets/4cc09e9a-e2ef-45a5-8b42-fc2b864b3593)
+
 Welcome to my game that I made in C.
 
 This game is right now just a space simulator but I have plans for more.
