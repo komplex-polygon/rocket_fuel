@@ -1,4 +1,4 @@
-![pixil-frame-0(73)](https://github.com/user-attachments/assets/4cc09e9a-e2ef-45a5-8b42-fc2b864b3593)
+![pixil-frame-0(77)](https://github.com/user-attachments/assets/7761834e-e6eb-464c-8082-e806cc407753)
 
 Welcome to my game that I made in C.
 
